@@ -1,0 +1,36 @@
+{
+  "name": "goji-btc-framework",
+  "version": "1.0.0",
+  "description": "GojiPower BTC 永续合约资金流向分析框架 — 经过 #trading 频道实时验证的 V1/V2 信号系统",
+  "main": "SKILL.md",
+  "openclaw": {
+    "skill": true,
+    "requires": {
+      "bins": ["curl"],
+      "capabilities": ["browser"]
+    },
+    "install": {
+      "from": "https://github.com/evaouyang/goji-btc-framework",
+      "command": "/plugin install goji-btc-framework"
+    }
+  },
+  "keywords": [
+    "trading",
+    "bitcoin",
+    "crypto",
+    "funding-rate",
+    "cvd",
+    "openclaw",
+    "skill"
+  ],
+  "author": "Eva Ouyang (with GojiPower guidance)",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/evaouyang/goji-btc-framework.git"
+  },
+  "bugs": {
+    "url": "https://github.com/evaouyang/goji-btc-framework/issues"
+  },
+  "homepage": "https://github.com/evaouyang/goji-btc-framework#readme"
+}
