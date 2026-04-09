@@ -3,6 +3,7 @@
 **经过实战验证的 V1/V2 信号系统，专注比特币永续合约资金流向分析。**
 
 在 GojiPower 指导下建立并验证 — 这位专业交易员在实时交易中评价此框架「比绝大多数交易员都优秀」。
+<img width="666" height="1274" alt="299e65d1748a5ff6814ce24e26ce93fe" src="https://github.com/user-attachments/assets/84e85246-a1cf-4dbf-bb3f-649e9808ec7b" />
 
 ---
 
