@@ -12,7 +12,7 @@ metadata:
       capabilities:
         - browser
     install:
-      from: "https://github.com/evaouyang/goji-btc-framework"
+      from: "https://github.com/evaouyang-ai/goji-btc-framework"
       command: "/plugin install goji-btc-framework"
 ---
 
@@ -23,8 +23,8 @@ metadata:
 **安装方式（任选其一）：**
 ```
 1. 在 OpenClaw 聊天中发送：/plugin install goji-btc-framework
-2. 命令行：openclaw skills install https://github.com/evaouyang/goji-btc-framework
-3. 手动：git clone https://github.com/evaouyang/goji-btc-framework ~/.openclaw/skills/
+2. 命令行：openclaw skills install https://github.com/evaouyang-ai/goji-btc-framework
+3. 手动：git clone https://github.com/evaouyang-ai/goji-btc-framework ~/.openclaw/skills/
 ```
 
 **使用指令：**
@@ -457,7 +457,7 @@ BTC 监测 - YYYY-MM-DD HH:MM PT
 - 🎯 **进阶技巧**：VPIN 过滤器、多时间框架共振、Gamma exposure 分析
 - 🤖 **Eve Bot 配置**：24/7 自动化信号推送和持仓监控
 
-**完整文档：** https://github.com/evaouyang/goji-btc-framework
+**完整文档：** https://github.com/evaouyang-ai/goji-btc-framework
 
 ---
 

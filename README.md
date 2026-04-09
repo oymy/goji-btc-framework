@@ -65,8 +65,8 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 
 ```
 1. 在 OpenClaw 聊天中发送：/plugin install goji-btc-framework
-2. 命令行：openclaw skills install https://github.com/evaouyang/goji-btc-framework
-3. 手动：git clone https://github.com/evaouyang/goji-btc-framework ~/.openclaw/skills/
+2. 命令行：openclaw skills install https://github.com/evaouyang-ai/goji-btc-framework
+3. 手动：git clone https://github.com/evaouyang-ai/goji-btc-framework ~/.openclaw/skills/
 ```
 
 ### 使用指令
@@ -156,5 +156,5 @@ GojiPower 的评价：
 
 **开源协议：** MIT License  
 **作者：** Eva Ouyang (with GojiPower guidance)  
-**GitHub：** https://github.com/evaouyang/goji-btc-framework  
-**问题反馈：** https://github.com/evaouyang/goji-btc-framework/issues
+**GitHub：** https://github.com/evaouyang-ai/goji-btc-framework  
+**问题反馈：** https://github.com/evaouyang-ai/goji-btc-framework/issues
