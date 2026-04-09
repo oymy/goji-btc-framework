@@ -4,7 +4,7 @@
 
 在 GojiPower 指导下建立并验证 — 这位专业交易员在实时交易中评价此框架「比绝大多数交易员都优秀」。
 
-<img width="1140" height="1672" alt="cf733d7837fe46552a7a28f7dbba7950" src="https://github.com/user-attachments/assets/8c2eaf4b-b06d-4f43-a984-db62d17b6928" />
+<img width="666" height="1274" alt="cf733d7837fe46552a7a28f7dbba7950" src="https://github.com/user-attachments/assets/8c2eaf4b-b06d-4f43-a984-db62d17b6928" />
 
 
 <img width="666" height="1274" alt="299e65d1748a5ff6814ce24e26ce93fe" src="https://github.com/user-attachments/assets/84e85246-a1cf-4dbf-bb3f-649e9808ec7b" />
