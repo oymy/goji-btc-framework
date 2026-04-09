@@ -158,7 +158,9 @@ GojiPower 的评价：
 **作者：** Eva Ouyang (with GojiPower guidance)  
 **GitHub：** https://github.com/evaouyang-ai/goji-btc-framework  
 **问题反馈：** https://github.com/evaouyang-ai/goji-btc-framework/issues
-其他人及联系方式：
+
+其他联系方式：
+
 https://www.linkedin.com/in/evaouyang/
 
 https://www.linkedin.com/in/0xl/
