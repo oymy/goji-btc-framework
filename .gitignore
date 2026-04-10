@@ -1,6 +1,6 @@
 # 私人数据
 memory/
-scripts/
+# scripts/
 skills/
 node_modules/
 .env
