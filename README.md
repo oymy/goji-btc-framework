@@ -94,6 +94,9 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 - [真实案例](docs/chapter3-real-cases.md) — 5个实战复盘
 - [适用场景](docs/chapter4-use-cases-limits.md) — V1/V2 详细规则、进阶技巧
 - [新手入门](docs/chapter5-quick-start.md) — 10分钟快速上手
+- [Formal-Lite Rules](docs/formal-lite-rules.md) — 更适合学习和后续回测准备的规则草稿
+- [局限与失败案例](docs/limitations-and-failure-cases.md) — 什么时候别太相信这套框架
+- [优化与验证计划](docs/optimization-and-validation-plan.md) — 后续如何逐步推进到可验证框架
 
 ---
 
@@ -112,6 +115,15 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 V2 依赖 CVD 和 OI 方向，对 FR 绝对值要求较低。
 
 **底线原则：** 数据不完整时，结论为「数据不完整，建议观望」，不编造数据。
+
+---
+
+## 🎯 当前定位
+
+这套仓库当前更适合作为**学习框架与观察框架**。
+
+它有一定市场结构逻辑，但目前仍以案例、经验和盘中解释为主。
+如果后续要做 1 年回测，建议从 `Formal-Lite Rules` 和 `优化与验证计划` 两份文档开始收紧规则。
 
 ---
 
