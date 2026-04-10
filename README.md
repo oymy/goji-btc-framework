@@ -102,6 +102,8 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 - [V1 回测规则草案](docs/backtest-rules-v1.md) — 第一版可执行回测规则
 - [V2 回测规则草案](docs/backtest-rules-v2.md) — 第一版可执行回测规则
 - [信号记录模板](docs/signal-log-template.md) — 统一记录信号与结果
+- [数据源方案](docs/data-source-options.md) — 回测准备阶段的数据选择建议
+- [最小实施路线](docs/minimal-implementation-roadmap.md) — 如何尽快推进到 first-pass 研究
 
 ---
 
