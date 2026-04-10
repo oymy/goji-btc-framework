@@ -99,6 +99,9 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 - [优化与验证计划](docs/optimization-and-validation-plan.md) — 后续如何逐步推进到可验证框架
 - [数据口径草案](docs/data-spec.md) — 为学习记录和回测准备统一字段
 - [回测准备](docs/backtest-prep.md) — 一年回测开始前需要先补齐什么
+- [V1 回测规则草案](docs/backtest-rules-v1.md) — 第一版可执行回测规则
+- [V2 回测规则草案](docs/backtest-rules-v2.md) — 第一版可执行回测规则
+- [信号记录模板](docs/signal-log-template.md) — 统一记录信号与结果
 
 ---
 
