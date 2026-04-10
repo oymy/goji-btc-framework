@@ -107,6 +107,8 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 - [B 档数据方案](docs/b-tier-data-plan.md) — 免费/低成本方案的取舍与范围
 - [B 档实施说明](docs/b-tier-implementation-notes.md) — 首版研究该先做到什么程度
 - [当前阻塞](docs/current-blocker.md) — 为什么回测还没真正跑起来
+- [手动下载指南](docs/manual-data-download-guide.md) — 当前阶段最务实的手动拿数路径
+- [数据源短名单](docs/data-source-shortlist.md) — 已筛过的一份优先级清单
 
 ---
 
