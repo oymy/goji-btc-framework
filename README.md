@@ -97,6 +97,8 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 - [Formal-Lite Rules](docs/formal-lite-rules.md) — 更适合学习和后续回测准备的规则草稿
 - [局限与失败案例](docs/limitations-and-failure-cases.md) — 什么时候别太相信这套框架
 - [优化与验证计划](docs/optimization-and-validation-plan.md) — 后续如何逐步推进到可验证框架
+- [数据口径草案](docs/data-spec.md) — 为学习记录和回测准备统一字段
+- [回测准备](docs/backtest-prep.md) — 一年回测开始前需要先补齐什么
 
 ---
 
