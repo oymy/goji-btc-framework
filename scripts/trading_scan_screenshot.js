@@ -9,6 +9,11 @@ const DATA = path.join(ROOT, 'data');
 const RUNS = path.join(DATA, 'runs');
 const PAGE_URL = 'https://www.coinglass.com/tv/Binance_BTCUSDT';
 const DEBUG_PORT = Number(process.env.OPENCLAW_CDP_PORT || 18800);
+const CHROME_CANDIDATES = [
+  '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+  '/Applications/Chromium.app/Contents/MacOS/Chromium',
+  '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+];
 
 function nowParts() {
   const d = new Date();
@@ -30,14 +35,65 @@ function httpReq(opts) {
   });
 }
 
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function isCdpReady() {
+  try {
+    const res = await httpReq({ host: '127.0.0.1', port: DEBUG_PORT, path: '/json/version', method: 'GET' });
+    return res.status === 200;
+  } catch {
+    return false;
+  }
+}
+
+function findChromeBinary() {
+  return CHROME_CANDIDATES.find(p => fs.existsSync(p)) || null;
+}
+
+async function ensureCdpReady() {
+  if (await isCdpReady()) return { ready: true, started: false };
+  const chromeBin = findChromeBinary();
+  if (!chromeBin) throw new Error(`cdp port ${DEBUG_PORT} not ready, and no Chrome binary found`);
+  const userDataDir = `/tmp/goji-cdp-${DEBUG_PORT}`;
+  ensureDir(userDataDir);
+  const child = cp.spawn(chromeBin, [
+    `--remote-debugging-port=${DEBUG_PORT}`,
+    '--no-first-run',
+    '--no-default-browser-check',
+    `--user-data-dir=${userDataDir}`,
+    'about:blank',
+  ], {
+    detached: true,
+    stdio: 'ignore',
+  });
+  child.unref();
+  for (let i = 0; i < 20; i++) {
+    if (await isCdpReady()) return { ready: true, started: true, chromeBin };
+    await sleep(500);
+  }
+  throw new Error(`cdp port ${DEBUG_PORT} not ready after auto-start attempt`);
+}
+
 function parseDomOverview(text) {
   const out = {};
   const compact = String(text).replace(/\r/g, '');
-  const priceMatch = compact.match(/BTCUSDT\s+Binance\s+Long\s+Short\s+([\d.,]+)/s);
+  const lines = String(text).split(/\n+/).map(s => s.trim()).filter(Boolean);
+
+  const priceMatch = compact.match(/BTCUSDT\s+Binance\s+Long\s+Short\s+([\d.,]+)/s)
+    || compact.match(/BTCUSDT\s+Binance[\s\S]*?([\d.,]+)\s*$/m);
   const frMatch = compact.match(/Funding Rates\s+([+-]?[\d.]+%)/s);
   const oiMatch = compact.match(/Open Interest\s+([\d.]+[BMK]?)/s);
   const lsMatch = compact.match(/Long\/Short \(24h\)\s+([\d.]+%\s*\/\s*[\d.]+%)/s);
-  out.price = priceMatch ? Number(priceMatch[1].replace(/,/g, '')) : null;
+
+  if (priceMatch) {
+    out.price = Number(priceMatch[1].replace(/,/g, ''));
+  } else {
+    const priceLine = lines.find(v => /^\d[\d,.]*$/.test(v));
+    out.price = priceLine ? Number(priceLine.replace(/,/g, '')) : null;
+  }
+
   out.funding_rate_display = frMatch ? frMatch[1] : null;
   out.open_interest = oiMatch ? oiMatch[1] : null;
   out.long_short_24h = lsMatch ? lsMatch[1] : null;
@@ -93,6 +149,7 @@ async function main() {
   const runDir = path.join(RUNS, t.date, t.hm);
   ensureDir(runDir);
 
+  const cdp = await ensureCdpReady();
   const created = await httpReq({ host: '127.0.0.1', port: DEBUG_PORT, path: `/json/new?${encodeURIComponent(PAGE_URL)}`, method: 'PUT' });
   if (created.status !== 200) throw new Error(`cannot create tab on cdp port ${DEBUG_PORT}`);
   const page = JSON.parse(created.body);
@@ -128,7 +185,29 @@ async function main() {
   const screenshotPath = path.join(runDir, 'screenshot.png');
   fs.writeFileSync(screenshotPath, Buffer.from(shot.data, 'base64'));
 
-  const domText = (await send('Runtime.evaluate', { expression: 'document.body.innerText', returnByValue: true })).result.value;
+  const domSnapshot = (await send('Runtime.evaluate', {
+    expression: `(() => {
+      const text = document.body.innerText || '';
+      const lines = text.split(/\n+/).map(s => s.trim()).filter(Boolean);
+      const idx = lines.indexOf('Overview');
+      const overview = idx >= 0 ? lines.slice(idx, idx + 12) : [];
+      const qsText = (selector) => {
+        const el = document.querySelector(selector);
+        return el ? (el.textContent || '').trim() : null;
+      };
+      const display = {
+        funding_rate_display: qsText('.cg-fr-long2, .cg-fr-short2, .cg-fr-long, .cg-fr-short'),
+        open_interest: qsText('.cg-oi, .open-interest, [class*="openInterest"], [class*="open-interest"]'),
+        long_short_24h: (() => {
+          const all = Array.from(document.querySelectorAll('div,span')).map(el => (el.textContent || '').trim()).filter(Boolean);
+          return all.find(v => /^\d{1,3}(?:\.\d+)?%\s*\/\s*\d{1,3}(?:\.\d+)?%$/.test(v)) || null;
+        })(),
+      };
+      return { text, overview, display };
+    })()`,
+    returnByValue: true
+  })).result.value;
+  const domText = domSnapshot?.text || '';
   const iframeText = (await send('Runtime.evaluate', {
     expression: `(() => {
       const frame = document.querySelector('iframe[id^="tradingview_"]');
@@ -139,7 +218,15 @@ async function main() {
   const ocrRaw = cp.execFileSync('swift', [path.join(__dirname, 'ocr_swift.swift'), screenshotPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
   const ocr = JSON.parse(ocrRaw);
 
-  const overview = parseDomOverview(domText);
+  const overview = { ...parseDomOverview(domText), ...(domSnapshot?.display || {}) };
+  if ((!overview.funding_rate_display || !overview.open_interest || !overview.long_short_24h) && domSnapshot?.overview?.length) {
+    const ov = domSnapshot.overview;
+    for (let i = 0; i < ov.length - 1; i++) {
+      if (ov[i] === 'Funding Rates' && !overview.funding_rate_display) overview.funding_rate_display = ov[i + 1] || null;
+      if (ov[i] === 'Open Interest' && !overview.open_interest) overview.open_interest = ov[i + 1] || null;
+      if (ov[i] === 'Long/Short (24h)' && !overview.long_short_24h) overview.long_short_24h = ov[i + 1] || null;
+    }
+  }
   const ocrExtracted = {
     cvd_candles: pickValue(ocr, { yMin: 0.60, yMax: 0.67, yTarget: 0.638, pattern: /^-?[\d.]+[KM]$/ }),
     aggregated_spot_cvd: pickValue(ocr, { yMin: 0.46, yMax: 0.52, yTarget: 0.489, pattern: /^-?[\d.]+[KM]$/ }),
@@ -218,7 +305,7 @@ async function main() {
 
   fs.writeFileSync(path.join(runDir, 'ocr.json'), JSON.stringify(ocr, null, 2));
   fs.writeFileSync(path.join(runDir, 'dom.json'), JSON.stringify(iframeStudies, null, 2));
-  fs.writeFileSync(path.join(runDir, 'meta.json'), JSON.stringify({ page_url: PAGE_URL, captured_at: t.iso, cdp_port: DEBUG_PORT, response_urls: responses.map(r => r.url).filter((v, i, a) => a.indexOf(v) === i) }, null, 2));
+  fs.writeFileSync(path.join(runDir, 'meta.json'), JSON.stringify({ page_url: PAGE_URL, captured_at: t.iso, cdp_port: DEBUG_PORT, cdp_auto_started: cdp.started, chrome_bin: cdp.chromeBin || null, response_urls: responses.map(r => r.url).filter((v, i, a) => a.indexOf(v) === i) }, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.json'), JSON.stringify(result, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.md'), [
     `scan_key: ${result.scan_key}`,
