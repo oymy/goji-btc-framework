@@ -7,6 +7,7 @@ const http = require('http');
 const ROOT = path.resolve(__dirname, '..');
 const DATA = path.join(ROOT, 'data');
 const RUNS = path.join(DATA, 'runs');
+const ARCHIVE = path.join(DATA, 'archive');
 const PAGE_URL = 'https://www.coinglass.com/tv/Binance_BTCUSDT';
 const DEBUG_PORT = Number(process.env.OPENCLAW_CDP_PORT || 18800);
 const CHROME_CANDIDATES = [
@@ -200,6 +201,7 @@ async function main() {
   const t = nowParts();
   const runDir = path.join(RUNS, t.date, t.hm);
   ensureDir(runDir);
+  ensureDir(ARCHIVE);
 
   const cdp = await ensureCdpReady();
   const created = await httpReq({ host: '127.0.0.1', port: DEBUG_PORT, path: `/json/new?${encodeURIComponent(PAGE_URL)}`, method: 'PUT' });
@@ -366,6 +368,7 @@ async function main() {
   fs.writeFileSync(path.join(runDir, 'dom.json'), JSON.stringify({ iframeStudies, liveDisplay: domSnapshot?.display || {} }, null, 2));
   fs.writeFileSync(path.join(runDir, 'meta.json'), JSON.stringify({ page_url: PAGE_URL, captured_at: t.iso, cdp_port: DEBUG_PORT, cdp_auto_started: cdp.started, chrome_bin: cdp.chromeBin || null, response_urls: responses.map(r => r.url).filter((v, i, a) => a.indexOf(v) === i) }, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.json'), JSON.stringify(result, null, 2));
+  fs.appendFileSync(path.join(ARCHIVE, 'scans.ndjson'), JSON.stringify(result) + '\n');
   fs.writeFileSync(path.join(runDir, 'scan.md'), [
     `scan_key: ${result.scan_key}`,
     `price: ${result.price}`,
