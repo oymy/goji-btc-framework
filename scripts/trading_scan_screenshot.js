@@ -138,6 +138,17 @@ function validateBidAskDelta(value) {
   return value;
 }
 
+async function fetchBtcPriceUsd() {
+  try {
+    const raw = cp.execFileSync('bash', ['-lc', 'HTTPS_PROXY=http://127.0.0.1:7897 HTTP_PROXY=http://127.0.0.1:7897 curl -s "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin&vs_currencies=usd"'], { encoding: 'utf8' });
+    const data = JSON.parse(raw);
+    const price = data?.bitcoin?.usd;
+    return Number.isFinite(price) ? price : null;
+  } catch {
+    return null;
+  }
+}
+
 function extractOverviewFromOCR(lines) {
   return {
     funding_rate_display: pickNumericNearLabel(lines, {
@@ -299,8 +310,10 @@ async function main() {
     aggregated_futures_bid_ask_delta: validateBidAskDelta(iframeStudies?.['Aggregated Futures Bid & Ask Delta']?.[0] || null),
   };
 
+  const apiPrice = await fetchBtcPriceUsd();
+
   const extracted = {
-    price: overview.price,
+    price: apiPrice ?? overview.price,
     funding_rate_display: overview.funding_rate_display || ocrExtracted.funding_rate_display,
     open_interest: overview.open_interest || ocrExtracted.open_interest,
     long_short_24h: overview.long_short_24h || ocrExtracted.long_short_24h,
