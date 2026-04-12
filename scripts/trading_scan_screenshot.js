@@ -113,15 +113,41 @@ function pickValue(lines, { yMin, yMax, yTarget, pattern, xMin = 0.55, xMax = 1 
   return matches[0]?.normalized || null;
 }
 
-function pickNumericNearLabel(lines, { labelPattern, yTolerance = 0.04, xMin = 0.55, valuePattern }) {
+function pickNumericNearLabel(lines, { labelPattern, yTolerance = 0.04, xMin = 0.55, xMax = 1, valuePattern }) {
   const normalized = lines.map(l => ({ ...l, normalized: normalizeOCRText(l.text) }));
   const label = normalized.find(l => labelPattern.test(l.normalized));
   if (!label) return null;
   const candidates = normalized
-    .filter(l => l.x >= xMin && Math.abs(l.y - label.y) <= yTolerance)
+    .filter(l => l.x >= xMin && l.x <= xMax && Math.abs(l.y - label.y) <= yTolerance)
     .filter(l => valuePattern.test(l.normalized))
     .sort((a, b) => Math.abs(a.x - label.x) - Math.abs(b.x - label.x));
   return candidates[0]?.normalized || null;
+}
+
+function extractOverviewFromOCR(lines) {
+  return {
+    funding_rate_display: pickNumericNearLabel(lines, {
+      labelPattern: /^Funding Rates$/i,
+      yTolerance: 0.02,
+      xMin: 0.82,
+      xMax: 0.99,
+      valuePattern: /^-?[\d.]+%?$/,
+    }),
+    open_interest: pickNumericNearLabel(lines, {
+      labelPattern: /^Open Interest$/i,
+      yTolerance: 0.02,
+      xMin: 0.82,
+      xMax: 0.99,
+      valuePattern: /^[\d.]+[BMK]$/i,
+    }),
+    long_short_24h: pickNumericNearLabel(lines, {
+      labelPattern: /^Long\/Short \(24h\)$/i,
+      yTolerance: 0.02,
+      xMin: 0.82,
+      xMax: 0.99,
+      valuePattern: /^\d{1,3}(?:\.\d+)?%\s*\/\s*\d{1,3}(?:\.\d+)?%$/,
+    }),
+  };
 }
 
 function parseScaledNumber(value) {
@@ -184,6 +210,10 @@ async function main() {
   const shot = await send('Page.captureScreenshot', { format: 'png' });
   const screenshotPath = path.join(runDir, 'screenshot.png');
   fs.writeFileSync(screenshotPath, Buffer.from(shot.data, 'base64'));
+  const overviewCropPath = path.join(runDir, 'overview-crop.png');
+  try {
+    cp.execFileSync('python3', ['-c', `from PIL import Image\nimg=Image.open(r'''${screenshotPath}''')\nw,h=img.size\n# 先固定一版右侧概览裁剪区，后续可继续校准\nleft=int(w*0.62)\ntop=int(h*0.00)\nright=int(w*0.995)\nbottom=int(h*0.12)\nimg.crop((left, top, right, bottom)).save(r'''${overviewCropPath}''')`], { stdio: 'ignore' });
+  } catch {}
 
   const domSnapshot = (await send('Runtime.evaluate', {
     expression: `(() => {
@@ -203,18 +233,53 @@ async function main() {
           return all.find(v => /^\d{1,3}(?:\.\d+)?%\s*\/\s*\d{1,3}(?:\.\d+)?%$/.test(v)) || null;
         })(),
       };
-      return { text, overview, display };
+      const debugNodes = Array.from(document.querySelectorAll('*'))
+        .map(el => {
+          const className = typeof el.className === 'string' ? el.className : '';
+          const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+          if (!/(cg-fr|funding|open interest|long\/short)/i.test(className + ' ' + text)) return null;
+          return { tag: el.tagName, className, text: text.slice(0, 200) };
+        })
+        .filter(Boolean)
+        .slice(0, 300);
+      return { text, overview, display, debugNodes };
     })()`,
     returnByValue: true
   })).result.value;
   const domText = domSnapshot?.text || '';
-  const iframeText = (await send('Runtime.evaluate', {
+  const iframeSnapshot = (await send('Runtime.evaluate', {
     expression: `(() => {
-      const frame = document.querySelector('iframe[id^="tradingview_"]');
-      return frame?.contentDocument?.body?.innerText || null;
+      const frames = Array.from(document.querySelectorAll('iframe')).map((frame, index) => {
+        let bodyText = null;
+        let debugNodes = [];
+        try {
+          const doc = frame.contentDocument;
+          bodyText = doc?.body?.innerText || null;
+          debugNodes = Array.from(doc?.querySelectorAll?.('*') || [])
+            .map(el => {
+              const className = typeof el.className === 'string' ? el.className : '';
+              const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
+              if (!/(cg-fr|funding|open interest|long\/short)/i.test(className + ' ' + text)) return null;
+              return { tag: el.tagName, className, text: text.slice(0, 200) };
+            })
+            .filter(Boolean)
+            .slice(0, 200);
+        } catch {}
+        return {
+          index,
+          id: frame.id || null,
+          src: frame.src || null,
+          bodyText,
+          debugNodes,
+        };
+      });
+      return frames;
     })()`,
     returnByValue: true
   })).result.value;
+  const iframeText = Array.isArray(iframeSnapshot)
+    ? iframeSnapshot.map(f => f?.bodyText).filter(Boolean).join('\n')
+    : null;
   const ocrRaw = cp.execFileSync('swift', [path.join(__dirname, 'ocr_swift.swift'), screenshotPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
   const ocr = JSON.parse(ocrRaw);
 
@@ -227,7 +292,11 @@ async function main() {
       if (ov[i] === 'Long/Short (24h)' && !overview.long_short_24h) overview.long_short_24h = ov[i + 1] || null;
     }
   }
+  const overviewOCR = extractOverviewFromOCR(ocr);
   const ocrExtracted = {
+    funding_rate_display: overviewOCR.funding_rate_display,
+    open_interest: overviewOCR.open_interest,
+    long_short_24h: overviewOCR.long_short_24h,
     cvd_candles: pickValue(ocr, { yMin: 0.60, yMax: 0.67, yTarget: 0.638, pattern: /^-?[\d.]+[KM]$/ }),
     aggregated_spot_cvd: pickValue(ocr, { yMin: 0.46, yMax: 0.52, yTarget: 0.489, pattern: /^-?[\d.]+[KM]$/ }),
     funding_weighted_panel: pickValue(ocr, { yMin: 0.33, yMax: 0.39, yTarget: 0.346, pattern: /^-?[\d.]+$/ }),
@@ -270,9 +339,9 @@ async function main() {
   };
   const extracted = {
     price: overview.price,
-    funding_rate_display: overview.funding_rate_display,
-    open_interest: overview.open_interest,
-    long_short_24h: overview.long_short_24h,
+    funding_rate_display: overview.funding_rate_display || ocrExtracted.funding_rate_display,
+    open_interest: overview.open_interest || ocrExtracted.open_interest,
+    long_short_24h: overview.long_short_24h || ocrExtracted.long_short_24h,
     cvd_candles: domExtracted.cvd_candles || ocrExtracted.cvd_candles,
     aggregated_spot_cvd: domExtracted.aggregated_spot_cvd || ocrExtracted.aggregated_spot_cvd,
     funding_weighted_panel: domExtracted.funding_weighted_panel || ocrExtracted.funding_weighted_panel,
@@ -291,6 +360,7 @@ async function main() {
     conclusion: '观望',
     paper_trade_action: 'NONE',
     screenshot_path: screenshotPath,
+    overview_crop_path: fs.existsSync(overviewCropPath) ? overviewCropPath : null,
     archive_dir: runDir,
     page_url: PAGE_URL,
     captured_at: t.iso,
@@ -300,11 +370,11 @@ async function main() {
       iframe_studies: iframeStudies,
     },
     status: Object.values(extracted).every(v => v !== null) ? 'ok' : 'partial',
-    note: 'Price/FR/OI/LongShort from live DOM. Chart panel values from iframe DOM first, OCR as fallback.'
+    note: 'Chart panel values from iframe DOM first, OCR fallback. Overview crop is generated for separate vision-based extraction of display fields.'
   };
 
   fs.writeFileSync(path.join(runDir, 'ocr.json'), JSON.stringify(ocr, null, 2));
-  fs.writeFileSync(path.join(runDir, 'dom.json'), JSON.stringify(iframeStudies, null, 2));
+  fs.writeFileSync(path.join(runDir, 'dom.json'), JSON.stringify({ iframeStudies, iframeSnapshot, liveDomDebug: domSnapshot?.debugNodes || [], liveDisplay: domSnapshot?.display || {} }, null, 2));
   fs.writeFileSync(path.join(runDir, 'meta.json'), JSON.stringify({ page_url: PAGE_URL, captured_at: t.iso, cdp_port: DEBUG_PORT, cdp_auto_started: cdp.started, chrome_bin: cdp.chromeBin || null, response_urls: responses.map(r => r.url).filter((v, i, a) => a.indexOf(v) === i) }, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.json'), JSON.stringify(result, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.md'), [
