@@ -1,0 +1,10 @@
+{
+  "initial_balance_usd": 1000,
+  "current_balance_usd": 1000,
+  "position_size_pct": 0.2,
+  "allow_long": true,
+  "allow_short": true,
+  "open_trade_id": null,
+  "last_scan_key": "2026-04-12T17:22",
+  "mode": "manual-paper-trade"
+}

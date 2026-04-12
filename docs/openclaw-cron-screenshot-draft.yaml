@@ -1,0 +1,42 @@
+cron:
+  trading-scan-2030:
+    schedule: "30 20 * * *"
+    sessionTarget: "main"
+    command: "cd /Users/oymyisme/.openclaw/workspace/study/goji-btc-framework && python3 scripts/trading_scan_runner.py"
+    enabled: true
+
+  trading-scan-2345:
+    schedule: "45 23 * * *"
+    sessionTarget: "main"
+    command: "cd /Users/oymyisme/.openclaw/workspace/study/goji-btc-framework && python3 scripts/trading_scan_runner.py"
+    enabled: true
+
+  trading-scan-0100:
+    schedule: "0 1 * * *"
+    sessionTarget: "main"
+    command: "cd /Users/oymyisme/.openclaw/workspace/study/goji-btc-framework && python3 scripts/trading_scan_runner.py"
+    enabled: true
+
+  trading-scan-0300:
+    schedule: "0 3 * * *"
+    sessionTarget: "main"
+    command: "cd /Users/oymyisme/.openclaw/workspace/study/goji-btc-framework && python3 scripts/trading_scan_runner.py"
+    enabled: true
+
+  trading-scan-0500:
+    schedule: "0 5 * * *"
+    sessionTarget: "main"
+    command: "cd /Users/oymyisme/.openclaw/workspace/study/goji-btc-framework && python3 scripts/trading_scan_runner.py"
+    enabled: true
+
+  trading-scan-0800:
+    schedule: "0 8 * * *"
+    sessionTarget: "main"
+    command: "cd /Users/oymyisme/.openclaw/workspace/study/goji-btc-framework && python3 scripts/trading_scan_runner.py"
+    enabled: true
+
+  trading-scan-1600:
+    schedule: "0 16 * * *"
+    sessionTarget: "main"
+    command: "cd /Users/oymyisme/.openclaw/workspace/study/goji-btc-framework && python3 scripts/trading_scan_runner.py"
+    enabled: true
