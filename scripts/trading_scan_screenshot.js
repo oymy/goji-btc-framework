@@ -31,23 +31,16 @@ function httpReq(opts) {
 }
 
 function parseDomOverview(text) {
-  const lines = String(text).split(/\n+/).map(s => s.trim()).filter(Boolean);
-  const i = lines.indexOf('Overview');
   const out = {};
-  if (i >= 0) {
-    for (let p = i + 1; p + 1 < lines.length; p += 2) {
-      const key = lines[p];
-      const value = lines[p + 1];
-      out[key] = value;
-      if (key === 'Long/Short (24h)') break;
-    }
-  }
-  const priceIdx = lines.findIndex(v => /^\d[\d,.]*$/.test(v) && lines[v.length] !== undefined);
-  const match = text.match(/BTCUSDT\s+Binance\s+Long\s+Short\s+([\d.,]+)/s);
-  out.price = match ? Number(match[1].replace(/,/g, '')) : null;
-  out.funding_rate_display = out['Funding Rates'] || null;
-  out.open_interest = out['Open Interest'] || null;
-  out.long_short_24h = out['Long/Short (24h)'] || null;
+  const compact = String(text).replace(/\r/g, '');
+  const priceMatch = compact.match(/BTCUSDT\s+Binance\s+Long\s+Short\s+([\d.,]+)/s);
+  const frMatch = compact.match(/Funding Rates\s+([+-]?[\d.]+%)/s);
+  const oiMatch = compact.match(/Open Interest\s+([\d.]+[BMK]?)/s);
+  const lsMatch = compact.match(/Long\/Short \(24h\)\s+([\d.]+%\s*\/\s*[\d.]+%)/s);
+  out.price = priceMatch ? Number(priceMatch[1].replace(/,/g, '')) : null;
+  out.funding_rate_display = frMatch ? frMatch[1] : null;
+  out.open_interest = oiMatch ? oiMatch[1] : null;
+  out.long_short_24h = lsMatch ? lsMatch[1] : null;
   return out;
 }
 
@@ -55,13 +48,44 @@ function normalizeOCRText(s) {
   return s.replace(/[|]/g, '').replace(/[Кк]/g, 'K').replace(/[Мм]/g, 'M').replace(/\s+/g, ' ').trim();
 }
 
-function pickValue(lines, { yMin, yMax, yTarget, pattern }) {
+function pickValue(lines, { yMin, yMax, yTarget, pattern, xMin = 0.55, xMax = 1 }) {
   const matches = lines
-    .filter(l => l.x > 0.55 && l.y >= yMin && l.y <= yMax)
+    .filter(l => l.x >= xMin && l.x <= xMax && l.y >= yMin && l.y <= yMax)
     .map(l => ({ ...l, normalized: normalizeOCRText(l.text) }))
     .filter(l => pattern.test(l.normalized))
     .sort((a, b) => Math.abs(a.y - yTarget) - Math.abs(b.y - yTarget));
   return matches[0]?.normalized || null;
+}
+
+function pickNumericNearLabel(lines, { labelPattern, yTolerance = 0.04, xMin = 0.55, valuePattern }) {
+  const normalized = lines.map(l => ({ ...l, normalized: normalizeOCRText(l.text) }));
+  const label = normalized.find(l => labelPattern.test(l.normalized));
+  if (!label) return null;
+  const candidates = normalized
+    .filter(l => l.x >= xMin && Math.abs(l.y - label.y) <= yTolerance)
+    .filter(l => valuePattern.test(l.normalized))
+    .sort((a, b) => Math.abs(a.x - label.x) - Math.abs(b.x - label.x));
+  return candidates[0]?.normalized || null;
+}
+
+function parseScaledNumber(value) {
+  if (!value) return null;
+  const s = String(value).trim().toUpperCase();
+  const m = s.match(/^(-?[\d.]+)([KM])?$/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  const unit = m[2] || '';
+  if (unit === 'K') return n * 1_000;
+  if (unit === 'M') return n * 1_000_000;
+  return n;
+}
+
+function validateBidAskDelta(value) {
+  const n = parseScaledNumber(value);
+  if (n === null) return null;
+  if (Math.abs(n) > 10000) return null;
+  return value;
 }
 
 async function main() {
@@ -105,26 +129,74 @@ async function main() {
   fs.writeFileSync(screenshotPath, Buffer.from(shot.data, 'base64'));
 
   const domText = (await send('Runtime.evaluate', { expression: 'document.body.innerText', returnByValue: true })).result.value;
+  const iframeText = (await send('Runtime.evaluate', {
+    expression: `(() => {
+      const frame = document.querySelector('iframe[id^="tradingview_"]');
+      return frame?.contentDocument?.body?.innerText || null;
+    })()`,
+    returnByValue: true
+  })).result.value;
   const ocrRaw = cp.execFileSync('swift', [path.join(__dirname, 'ocr_swift.swift'), screenshotPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
   const ocr = JSON.parse(ocrRaw);
 
   const overview = parseDomOverview(domText);
+  const ocrExtracted = {
+    cvd_candles: pickValue(ocr, { yMin: 0.60, yMax: 0.67, yTarget: 0.638, pattern: /^-?[\d.]+[KM]$/ }),
+    aggregated_spot_cvd: pickValue(ocr, { yMin: 0.46, yMax: 0.52, yTarget: 0.489, pattern: /^-?[\d.]+[KM]$/ }),
+    funding_weighted_panel: pickValue(ocr, { yMin: 0.33, yMax: 0.39, yTarget: 0.346, pattern: /^-?[\d.]+$/ }),
+    oi_candles: pickValue(ocr, { yMin: 0.20, yMax: 0.26, yTarget: 0.226, pattern: /^-?[\d.]+[KM]$/ }),
+    aggregated_futures_bid_ask_delta: validateBidAskDelta(
+      pickNumericNearLabel(ocr, {
+        labelPattern: /Aggregated Futures Bid/i,
+        yTolerance: 0.05,
+        xMin: 0.55,
+        valuePattern: /^-?[\d.]+[KM]?$/,
+      }) || pickValue(ocr, { yMin: 0.07, yMax: 0.13, yTarget: 0.096, pattern: /^-?[\d.]+[KM]?$/, xMin: 0.70 })
+    ),
+  };
+  function extractStudyValueBlock(text, title, pattern) {
+    const lines = String(text || '').split(/\n+/).map(s => s.trim()).filter(Boolean);
+    const idx = lines.findIndex(l => l.includes(title));
+    if (idx < 0) return [];
+    const out = [];
+    for (let i = idx + 1; i < Math.min(lines.length, idx + 8); i++) {
+      const v = lines[i].replace(/−/g, '-');
+      if (pattern.test(v)) out.push(v);
+    }
+    return out;
+  }
+  const iframeStudies = iframeText ? {
+    'Cumulative Volume Delta (CVD Candles)': extractStudyValueBlock(iframeText, 'Cumulative Volume Delta (CVD Candles)', /^-?[\d.]+[KM]$/i),
+    'Aggregated Spot Cumulative Volume Delta (CVD Candles)': extractStudyValueBlock(iframeText, 'Aggregated Spot Cumulative Volume Delta (CVD Candles)', /^-?[\d.]+[KM]$/i),
+    'Funding Rates(Open Interest Weighted)': extractStudyValueBlock(iframeText, 'Funding Rates(Open Interest Weighted)', /^-?[\d.]+$/i),
+    'Open Interest (Candles)': extractStudyValueBlock(iframeText, 'Open Interest (Candles)', /^-?[\d.]+[KM]$/i),
+    'Aggregated Futures Bid & Ask Delta': extractStudyValueBlock(iframeText, 'Aggregated Futures Bid & Ask Delta', /^-?[\d.]+[KM]?$/i),
+  } : null;
+  const domExtracted = {
+    cvd_candles: iframeStudies?.['Cumulative Volume Delta (CVD Candles)']?.at(-1) || null,
+    aggregated_spot_cvd: iframeStudies?.['Aggregated Spot Cumulative Volume Delta (CVD Candles)']?.at(-1) || null,
+    funding_weighted_panel: iframeStudies?.['Funding Rates(Open Interest Weighted)']?.[0] || null,
+    oi_candles: iframeStudies?.['Open Interest (Candles)']?.at(-1) || null,
+    aggregated_futures_bid_ask_delta: validateBidAskDelta(
+      iframeStudies?.['Aggregated Futures Bid & Ask Delta']?.[0] || null
+    ),
+  };
   const extracted = {
     price: overview.price,
     funding_rate_display: overview.funding_rate_display,
     open_interest: overview.open_interest,
     long_short_24h: overview.long_short_24h,
-    cvd_candles: pickValue(ocr, { yMin: 0.60, yMax: 0.67, yTarget: 0.638, pattern: /^-?[\d.]+[KM]$/ }),
-    aggregated_spot_cvd: pickValue(ocr, { yMin: 0.46, yMax: 0.52, yTarget: 0.489, pattern: /^-?[\d.]+[KM]$/ }),
-    funding_weighted_panel: pickValue(ocr, { yMin: 0.33, yMax: 0.39, yTarget: 0.346, pattern: /^-?[\d.]+$/ }),
-    oi_candles: pickValue(ocr, { yMin: 0.20, yMax: 0.26, yTarget: 0.226, pattern: /^-?[\d.]+[KM]$/ }),
-    aggregated_futures_bid_ask_delta: pickValue(ocr, { yMin: 0.07, yMax: 0.13, yTarget: 0.096, pattern: /^-?[\d.]+$/ }),
+    cvd_candles: domExtracted.cvd_candles || ocrExtracted.cvd_candles,
+    aggregated_spot_cvd: domExtracted.aggregated_spot_cvd || ocrExtracted.aggregated_spot_cvd,
+    funding_weighted_panel: domExtracted.funding_weighted_panel || ocrExtracted.funding_weighted_panel,
+    oi_candles: domExtracted.oi_candles || ocrExtracted.oi_candles,
+    aggregated_futures_bid_ask_delta: domExtracted.aggregated_futures_bid_ask_delta || ocrExtracted.aggregated_futures_bid_ask_delta,
   };
 
   const scanKey = `${t.date}T${t.hm.slice(0,2)}:${t.hm.slice(2)}`;
   const result = {
     scan_key: scanKey,
-    source: 'coinglass_browser_cdp_ocr',
+    source: 'coinglass_browser_cdp_dom_ocr',
     symbol: 'BTCUSDT',
     exchange: 'Binance',
     timeframe: '1H',
@@ -135,11 +207,17 @@ async function main() {
     archive_dir: runDir,
     page_url: PAGE_URL,
     captured_at: t.iso,
+    extraction_debug: {
+      dom: domExtracted,
+      ocr: ocrExtracted,
+      iframe_studies: iframeStudies,
+    },
     status: Object.values(extracted).every(v => v !== null) ? 'ok' : 'partial',
-    note: 'Price/FR/OI/LongShort from live DOM. Chart panel values from local screenshot OCR.'
+    note: 'Price/FR/OI/LongShort from live DOM. Chart panel values from iframe DOM first, OCR as fallback.'
   };
 
   fs.writeFileSync(path.join(runDir, 'ocr.json'), JSON.stringify(ocr, null, 2));
+  fs.writeFileSync(path.join(runDir, 'dom.json'), JSON.stringify(iframeStudies, null, 2));
   fs.writeFileSync(path.join(runDir, 'meta.json'), JSON.stringify({ page_url: PAGE_URL, captured_at: t.iso, cdp_port: DEBUG_PORT, response_urls: responses.map(r => r.url).filter((v, i, a) => a.indexOf(v) === i) }, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.json'), JSON.stringify(result, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.md'), [
