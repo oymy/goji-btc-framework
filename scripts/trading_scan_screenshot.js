@@ -35,9 +35,7 @@ function httpReq(opts) {
   });
 }
 
-function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
-}
+function sleep(ms) { return new Promise(resolve => setTimeout(resolve, ms)); }
 
 async function isCdpReady() {
   try {
@@ -64,10 +62,7 @@ async function ensureCdpReady() {
     '--no-default-browser-check',
     `--user-data-dir=${userDataDir}`,
     'about:blank',
-  ], {
-    detached: true,
-    stdio: 'ignore',
-  });
+  ], { detached: true, stdio: 'ignore' });
   child.unref();
   for (let i = 0; i < 20; i++) {
     if (await isCdpReady()) return { ready: true, started: true, chromeBin };
@@ -87,9 +82,8 @@ function parseDomOverview(text) {
   const oiMatch = compact.match(/Open Interest\s+([\d.]+[BMK]?)/s);
   const lsMatch = compact.match(/Long\/Short \(24h\)\s+([\d.]+%\s*\/\s*[\d.]+%)/s);
 
-  if (priceMatch) {
-    out.price = Number(priceMatch[1].replace(/,/g, ''));
-  } else {
+  if (priceMatch) out.price = Number(priceMatch[1].replace(/,/g, ''));
+  else {
     const priceLine = lines.find(v => /^\d[\d,.]*$/.test(v));
     out.price = priceLine ? Number(priceLine.replace(/,/g, '')) : null;
   }
@@ -124,6 +118,26 @@ function pickNumericNearLabel(lines, { labelPattern, yTolerance = 0.04, xMin = 0
   return candidates[0]?.normalized || null;
 }
 
+function parseScaledNumber(value) {
+  if (!value) return null;
+  const s = String(value).trim().toUpperCase();
+  const m = s.match(/^(-?[\d.]+)([KM])?$/);
+  if (!m) return null;
+  const n = Number(m[1]);
+  if (!Number.isFinite(n)) return null;
+  const unit = m[2] || '';
+  if (unit === 'K') return n * 1_000;
+  if (unit === 'M') return n * 1_000_000;
+  return n;
+}
+
+function validateBidAskDelta(value) {
+  const n = parseScaledNumber(value);
+  if (n === null) return null;
+  if (Math.abs(n) > 10000) return null;
+  return value;
+}
+
 function extractOverviewFromOCR(lines) {
   return {
     funding_rate_display: pickNumericNearLabel(lines, {
@@ -150,24 +164,16 @@ function extractOverviewFromOCR(lines) {
   };
 }
 
-function parseScaledNumber(value) {
-  if (!value) return null;
-  const s = String(value).trim().toUpperCase();
-  const m = s.match(/^(-?[\d.]+)([KM])?$/);
-  if (!m) return null;
-  const n = Number(m[1]);
-  if (!Number.isFinite(n)) return null;
-  const unit = m[2] || '';
-  if (unit === 'K') return n * 1_000;
-  if (unit === 'M') return n * 1_000_000;
-  return n;
-}
-
-function validateBidAskDelta(value) {
-  const n = parseScaledNumber(value);
-  if (n === null) return null;
-  if (Math.abs(n) > 10000) return null;
-  return value;
+function extractStudyValueBlock(text, title, pattern) {
+  const lines = String(text || '').split(/\n+/).map(s => s.trim()).filter(Boolean);
+  const idx = lines.findIndex(l => l.includes(title));
+  if (idx < 0) return [];
+  const out = [];
+  for (let i = idx + 1; i < Math.min(lines.length, idx + 8); i++) {
+    const v = lines[i].replace(/−/g, '-');
+    if (pattern.test(v)) out.push(v);
+  }
+  return out;
 }
 
 async function main() {
@@ -212,7 +218,7 @@ async function main() {
   fs.writeFileSync(screenshotPath, Buffer.from(shot.data, 'base64'));
   const overviewCropPath = path.join(runDir, 'overview-crop.png');
   try {
-    cp.execFileSync('python3', ['-c', `from PIL import Image\nimg=Image.open(r'''${screenshotPath}''')\nw,h=img.size\n# 先固定一版右侧概览裁剪区，后续可继续校准\nleft=int(w*0.62)\ntop=int(h*0.00)\nright=int(w*0.995)\nbottom=int(h*0.12)\nimg.crop((left, top, right, bottom)).save(r'''${overviewCropPath}''')`], { stdio: 'ignore' });
+    cp.execFileSync('python3', ['-c', `from PIL import Image\nimg=Image.open(r'''${screenshotPath}''')\nw,h=img.size\nleft=int(w*0.62)\ntop=int(h*0.00)\nright=int(w*0.995)\nbottom=int(h*0.12)\nimg.crop((left, top, right, bottom)).save(r'''${overviewCropPath}''')`], { stdio: 'ignore' });
   } catch {}
 
   const domSnapshot = (await send('Runtime.evaluate', {
@@ -233,53 +239,18 @@ async function main() {
           return all.find(v => /^\d{1,3}(?:\.\d+)?%\s*\/\s*\d{1,3}(?:\.\d+)?%$/.test(v)) || null;
         })(),
       };
-      const debugNodes = Array.from(document.querySelectorAll('*'))
-        .map(el => {
-          const className = typeof el.className === 'string' ? el.className : '';
-          const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-          if (!/(cg-fr|funding|open interest|long\/short)/i.test(className + ' ' + text)) return null;
-          return { tag: el.tagName, className, text: text.slice(0, 200) };
-        })
-        .filter(Boolean)
-        .slice(0, 300);
-      return { text, overview, display, debugNodes };
+      return { text, overview, display };
     })()`,
     returnByValue: true
   })).result.value;
   const domText = domSnapshot?.text || '';
-  const iframeSnapshot = (await send('Runtime.evaluate', {
+  const iframeText = (await send('Runtime.evaluate', {
     expression: `(() => {
-      const frames = Array.from(document.querySelectorAll('iframe')).map((frame, index) => {
-        let bodyText = null;
-        let debugNodes = [];
-        try {
-          const doc = frame.contentDocument;
-          bodyText = doc?.body?.innerText || null;
-          debugNodes = Array.from(doc?.querySelectorAll?.('*') || [])
-            .map(el => {
-              const className = typeof el.className === 'string' ? el.className : '';
-              const text = (el.textContent || '').replace(/\s+/g, ' ').trim();
-              if (!/(cg-fr|funding|open interest|long\/short)/i.test(className + ' ' + text)) return null;
-              return { tag: el.tagName, className, text: text.slice(0, 200) };
-            })
-            .filter(Boolean)
-            .slice(0, 200);
-        } catch {}
-        return {
-          index,
-          id: frame.id || null,
-          src: frame.src || null,
-          bodyText,
-          debugNodes,
-        };
-      });
-      return frames;
+      const frame = document.querySelector('iframe[id^="tradingview_"]');
+      return frame?.contentDocument?.body?.innerText || null;
     })()`,
     returnByValue: true
   })).result.value;
-  const iframeText = Array.isArray(iframeSnapshot)
-    ? iframeSnapshot.map(f => f?.bodyText).filter(Boolean).join('\n')
-    : null;
   const ocrRaw = cp.execFileSync('swift', [path.join(__dirname, 'ocr_swift.swift'), screenshotPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
   const ocr = JSON.parse(ocrRaw);
 
@@ -292,6 +263,7 @@ async function main() {
       if (ov[i] === 'Long/Short (24h)' && !overview.long_short_24h) overview.long_short_24h = ov[i + 1] || null;
     }
   }
+
   const overviewOCR = extractOverviewFromOCR(ocr);
   const ocrExtracted = {
     funding_rate_display: overviewOCR.funding_rate_display,
@@ -310,17 +282,7 @@ async function main() {
       }) || pickValue(ocr, { yMin: 0.07, yMax: 0.13, yTarget: 0.096, pattern: /^-?[\d.]+[KM]?$/, xMin: 0.70 })
     ),
   };
-  function extractStudyValueBlock(text, title, pattern) {
-    const lines = String(text || '').split(/\n+/).map(s => s.trim()).filter(Boolean);
-    const idx = lines.findIndex(l => l.includes(title));
-    if (idx < 0) return [];
-    const out = [];
-    for (let i = idx + 1; i < Math.min(lines.length, idx + 8); i++) {
-      const v = lines[i].replace(/−/g, '-');
-      if (pattern.test(v)) out.push(v);
-    }
-    return out;
-  }
+
   const iframeStudies = iframeText ? {
     'Cumulative Volume Delta (CVD Candles)': extractStudyValueBlock(iframeText, 'Cumulative Volume Delta (CVD Candles)', /^-?[\d.]+[KM]$/i),
     'Aggregated Spot Cumulative Volume Delta (CVD Candles)': extractStudyValueBlock(iframeText, 'Aggregated Spot Cumulative Volume Delta (CVD Candles)', /^-?[\d.]+[KM]$/i),
@@ -328,15 +290,15 @@ async function main() {
     'Open Interest (Candles)': extractStudyValueBlock(iframeText, 'Open Interest (Candles)', /^-?[\d.]+[KM]$/i),
     'Aggregated Futures Bid & Ask Delta': extractStudyValueBlock(iframeText, 'Aggregated Futures Bid & Ask Delta', /^-?[\d.]+[KM]?$/i),
   } : null;
+
   const domExtracted = {
     cvd_candles: iframeStudies?.['Cumulative Volume Delta (CVD Candles)']?.at(-1) || null,
     aggregated_spot_cvd: iframeStudies?.['Aggregated Spot Cumulative Volume Delta (CVD Candles)']?.at(-1) || null,
     funding_weighted_panel: iframeStudies?.['Funding Rates(Open Interest Weighted)']?.[0] || null,
     oi_candles: iframeStudies?.['Open Interest (Candles)']?.at(-1) || null,
-    aggregated_futures_bid_ask_delta: validateBidAskDelta(
-      iframeStudies?.['Aggregated Futures Bid & Ask Delta']?.[0] || null
-    ),
+    aggregated_futures_bid_ask_delta: validateBidAskDelta(iframeStudies?.['Aggregated Futures Bid & Ask Delta']?.[0] || null),
   };
+
   const extracted = {
     price: overview.price,
     funding_rate_display: overview.funding_rate_display || ocrExtracted.funding_rate_display,
@@ -370,11 +332,11 @@ async function main() {
       iframe_studies: iframeStudies,
     },
     status: Object.values(extracted).every(v => v !== null) ? 'ok' : 'partial',
-    note: 'Chart panel values from iframe DOM first, OCR fallback. Overview crop is generated for separate vision-based extraction of display fields.'
+    note: 'Overview display fields from cropped OCR fallback. Chart panel values from iframe DOM first, OCR fallback.'
   };
 
   fs.writeFileSync(path.join(runDir, 'ocr.json'), JSON.stringify(ocr, null, 2));
-  fs.writeFileSync(path.join(runDir, 'dom.json'), JSON.stringify({ iframeStudies, iframeSnapshot, liveDomDebug: domSnapshot?.debugNodes || [], liveDisplay: domSnapshot?.display || {} }, null, 2));
+  fs.writeFileSync(path.join(runDir, 'dom.json'), JSON.stringify({ iframeStudies, liveDisplay: domSnapshot?.display || {} }, null, 2));
   fs.writeFileSync(path.join(runDir, 'meta.json'), JSON.stringify({ page_url: PAGE_URL, captured_at: t.iso, cdp_port: DEBUG_PORT, cdp_auto_started: cdp.started, chrome_bin: cdp.chromeBin || null, response_urls: responses.map(r => r.url).filter((v, i, a) => a.indexOf(v) === i) }, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.json'), JSON.stringify(result, null, 2));
   fs.writeFileSync(path.join(runDir, 'scan.md'), [
