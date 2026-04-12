@@ -1,67 +1,67 @@
 {
-  "scan_key": "2026-04-12T22:55",
+  "scan_key": "2026-04-12T22:58",
   "source": "coinglass_browser_cdp_dom_ocr",
   "symbol": "BTCUSDT",
   "exchange": "Binance",
   "timeframe": "1H",
-  "price": 70767,
-  "funding_rate_display": "-0.0007%",
-  "open_interest": "6.51B",
-  "long_short_24h": "48.79% / 51.21%",
-  "cvd_candles": "31.621K",
-  "aggregated_spot_cvd": "7.19K",
-  "funding_weighted_panel": "0.0026",
-  "oi_candles": "92.155K",
-  "aggregated_futures_bid_ask_delta": "2.266K",
+  "price": 70797,
+  "funding_rate_display": "-0.00069",
+  "open_interest": "6.52B",
+  "long_short_24h": "48.82% / 51.18%",
+  "cvd_candles": "31.696K",
+  "aggregated_spot_cvd": "7.217K",
+  "funding_weighted_panel": "0.0027",
+  "oi_candles": "92.158K",
+  "aggregated_futures_bid_ask_delta": "1.942K",
   "conclusion": "观望",
   "paper_trade_action": "NONE",
-  "screenshot_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2255/screenshot.png",
-  "overview_crop_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2255/overview-crop.png",
-  "archive_dir": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2255",
+  "screenshot_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2258/screenshot.png",
+  "overview_crop_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2258/overview-crop.png",
+  "archive_dir": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2258",
   "page_url": "https://www.coinglass.com/tv/Binance_BTCUSDT",
-  "captured_at": "2026-04-12T14:55:29.078Z",
+  "captured_at": "2026-04-12T14:58:53.533Z",
   "extraction_debug": {
     "dom": {
-      "cvd_candles": "31.621K",
-      "aggregated_spot_cvd": "7.19K",
-      "funding_weighted_panel": "0.0026",
-      "oi_candles": "92.155K",
-      "aggregated_futures_bid_ask_delta": "2.266K"
+      "cvd_candles": "31.696K",
+      "aggregated_spot_cvd": "7.217K",
+      "funding_weighted_panel": "0.0027",
+      "oi_candles": "92.158K",
+      "aggregated_futures_bid_ask_delta": "1.942K"
     },
     "ocr": {
-      "funding_rate_display": "-0.0007%",
-      "open_interest": "6.51B",
-      "long_short_24h": "48.79% / 51.21%",
+      "funding_rate_display": "-0.00069",
+      "open_interest": "6.52B",
+      "long_short_24h": "48.82% / 51.18%",
       "cvd_candles": "35K",
-      "aggregated_spot_cvd": "685.89M",
-      "funding_weighted_panel": "4730.96",
+      "aggregated_spot_cvd": "686.16M",
+      "funding_weighted_panel": "4731.19",
       "oi_candles": "96K",
-      "aggregated_futures_bid_ask_delta": "2.266K"
+      "aggregated_futures_bid_ask_delta": "1.942K"
     },
     "iframe_studies": {
       "Cumulative Volume Delta (CVD Candles)": [
         "32.612K",
         "32.612K",
-        "31.621K",
-        "31.621K"
+        "31.696K",
+        "31.696K"
       ],
       "Aggregated Spot Cumulative Volume Delta (CVD Candles)": [
         "7.508K",
         "7.508K",
-        "7.19K",
-        "7.19K"
+        "7.217K",
+        "7.217K"
       ],
       "Funding Rates(Open Interest Weighted)": [
-        "0.0026"
+        "0.0027"
       ],
       "Open Interest (Candles)": [
         "91.978K",
         "92.167K",
         "91.635K",
-        "92.155K"
+        "92.158K"
       ],
       "Aggregated Futures Bid & Ask Delta": [
-        "2.266K"
+        "1.942K"
       ]
     }
   },

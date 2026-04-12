@@ -187,6 +187,15 @@ function extractStudyValueBlock(text, title, pattern) {
   return out;
 }
 
+async function captureOverviewOCR(screenshotPath, overviewCropPath) {
+  try {
+    cp.execFileSync('python3', ['-c', `from PIL import Image\nimg=Image.open(r'''${screenshotPath}''')\nw,h=img.size\nleft=int(w*0.62)\ntop=int(h*0.00)\nright=int(w*0.995)\nbottom=int(h*0.12)\nimg.crop((left, top, right, bottom)).save(r'''${overviewCropPath}''')`], { stdio: 'ignore' });
+  } catch {}
+  const ocrRaw = cp.execFileSync('swift', [path.join(__dirname, 'ocr_swift.swift'), screenshotPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
+  const ocr = JSON.parse(ocrRaw);
+  return { ocr, overviewOCR: extractOverviewFromOCR(ocr) };
+}
+
 async function main() {
   const t = nowParts();
   const runDir = path.join(RUNS, t.date, t.hm);
@@ -228,9 +237,6 @@ async function main() {
   const screenshotPath = path.join(runDir, 'screenshot.png');
   fs.writeFileSync(screenshotPath, Buffer.from(shot.data, 'base64'));
   const overviewCropPath = path.join(runDir, 'overview-crop.png');
-  try {
-    cp.execFileSync('python3', ['-c', `from PIL import Image\nimg=Image.open(r'''${screenshotPath}''')\nw,h=img.size\nleft=int(w*0.62)\ntop=int(h*0.00)\nright=int(w*0.995)\nbottom=int(h*0.12)\nimg.crop((left, top, right, bottom)).save(r'''${overviewCropPath}''')`], { stdio: 'ignore' });
-  } catch {}
 
   const domSnapshot = (await send('Runtime.evaluate', {
     expression: `(() => {
@@ -262,8 +268,7 @@ async function main() {
     })()`,
     returnByValue: true
   })).result.value;
-  const ocrRaw = cp.execFileSync('swift', [path.join(__dirname, 'ocr_swift.swift'), screenshotPath], { encoding: 'utf8', maxBuffer: 20 * 1024 * 1024 });
-  const ocr = JSON.parse(ocrRaw);
+  let { ocr, overviewOCR } = await captureOverviewOCR(screenshotPath, overviewCropPath);
 
   const overview = { ...parseDomOverview(domText), ...(domSnapshot?.display || {}) };
   if ((!overview.funding_rate_display || !overview.open_interest || !overview.long_short_24h) && domSnapshot?.overview?.length) {
@@ -275,7 +280,16 @@ async function main() {
     }
   }
 
-  const overviewOCR = extractOverviewFromOCR(ocr);
+  if (!overviewOCR.funding_rate_display || !overviewOCR.open_interest || !overviewOCR.long_short_24h) {
+    await sleep(2500);
+    const retryShot = await send('Page.captureScreenshot', { format: 'png' });
+    fs.writeFileSync(screenshotPath, Buffer.from(retryShot.data, 'base64'));
+    const retried = await captureOverviewOCR(screenshotPath, overviewCropPath);
+    if (!overviewOCR.funding_rate_display && retried.overviewOCR.funding_rate_display) overviewOCR.funding_rate_display = retried.overviewOCR.funding_rate_display;
+    if (!overviewOCR.open_interest && retried.overviewOCR.open_interest) overviewOCR.open_interest = retried.overviewOCR.open_interest;
+    if (!overviewOCR.long_short_24h && retried.overviewOCR.long_short_24h) overviewOCR.long_short_24h = retried.overviewOCR.long_short_24h;
+    ocr = retried.ocr;
+  }
   const ocrExtracted = {
     funding_rate_display: overviewOCR.funding_rate_display,
     open_interest: overviewOCR.open_interest,
