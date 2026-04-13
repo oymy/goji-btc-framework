@@ -4,11 +4,6 @@
 
 在 GojiPower 指导下建立并验证 — 这位专业交易员在实时交易中评价此框架「比绝大多数交易员都优秀」。
 
-<img width="666" height="1274" alt="cf733d7837fe46552a7a28f7dbba7950" src="https://github.com/user-attachments/assets/8c2eaf4b-b06d-4f43-a984-db62d17b6928" />
-
-
-<img width="666" height="1274" alt="299e65d1748a5ff6814ce24e26ce93fe" src="https://github.com/user-attachments/assets/84e85246-a1cf-4dbf-bb3f-649e9808ec7b" />
-
 ---
 
 ## 框架特色：不看价格形态，看资金流向
@@ -70,8 +65,8 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 
 ```
 1. 在 OpenClaw 聊天中发送：/plugin install goji-btc-framework
-2. 命令行：openclaw skills install https://github.com/evaouyang-ai/goji-btc-framework
-3. 手动：git clone https://github.com/evaouyang-ai/goji-btc-framework ~/.openclaw/skills/
+2. 命令行：openclaw skills install https://github.com/evaouyang/goji-btc-framework
+3. 手动：git clone https://github.com/evaouyang/goji-btc-framework ~/.openclaw/skills/
 ```
 
 ### 使用指令
@@ -94,21 +89,6 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 - [真实案例](docs/chapter3-real-cases.md) — 5个实战复盘
 - [适用场景](docs/chapter4-use-cases-limits.md) — V1/V2 详细规则、进阶技巧
 - [新手入门](docs/chapter5-quick-start.md) — 10分钟快速上手
-- [Formal-Lite Rules](docs/formal-lite-rules.md) — 更适合学习和后续回测准备的规则草稿
-- [局限与失败案例](docs/limitations-and-failure-cases.md) — 什么时候别太相信这套框架
-- [优化与验证计划](docs/optimization-and-validation-plan.md) — 后续如何逐步推进到可验证框架
-- [数据口径草案](docs/data-spec.md) — 为学习记录和回测准备统一字段
-- [回测准备](docs/backtest-prep.md) — 一年回测开始前需要先补齐什么
-- [V1 回测规则草案](docs/backtest-rules-v1.md) — 第一版可执行回测规则
-- [V2 回测规则草案](docs/backtest-rules-v2.md) — 第一版可执行回测规则
-- [信号记录模板](docs/signal-log-template.md) — 统一记录信号与结果
-- [数据源方案](docs/data-source-options.md) — 回测准备阶段的数据选择建议
-- [最小实施路线](docs/minimal-implementation-roadmap.md) — 如何尽快推进到 first-pass 研究
-- [B 档数据方案](docs/b-tier-data-plan.md) — 免费/低成本方案的取舍与范围
-- [B 档实施说明](docs/b-tier-implementation-notes.md) — 首版研究该先做到什么程度
-- [当前阻塞](docs/current-blocker.md) — 为什么回测还没真正跑起来
-- [手动下载指南](docs/manual-data-download-guide.md) — 当前阶段最务实的手动拿数路径
-- [数据源短名单](docs/data-source-shortlist.md) — 已筛过的一份优先级清单
 
 ---
 
@@ -127,15 +107,6 @@ OI（未平仓合约）  → 判断资金来源（新入场 vs 平仓）
 V2 依赖 CVD 和 OI 方向，对 FR 绝对值要求较低。
 
 **底线原则：** 数据不完整时，结论为「数据不完整，建议观望」，不编造数据。
-
----
-
-## 🎯 当前定位
-
-这套仓库当前更适合作为**学习框架与观察框架**。
-
-它有一定市场结构逻辑，但目前仍以案例、经验和盘中解释为主。
-如果后续要做 1 年回测，建议从 `Formal-Lite Rules` 和 `优化与验证计划` 两份文档开始收紧规则。
 
 ---
 
@@ -185,13 +156,5 @@ GojiPower 的评价：
 
 **开源协议：** MIT License  
 **作者：** Eva Ouyang (with GojiPower guidance)  
-**GitHub：** https://github.com/evaouyang-ai/goji-btc-framework  
-**问题反馈：** https://github.com/evaouyang-ai/goji-btc-framework/issues
-
-其他联系方式：
-
-https://www.linkedin.com/in/evaouyang/
-
-https://www.linkedin.com/in/0xl/
-
-OpenClaw-Beagle-channel Discord: https://discord.gg/yUaSZsrD 
+**GitHub：** https://github.com/evaouyang/goji-btc-framework  
+**问题反馈：** https://github.com/evaouyang/goji-btc-framework/issues
