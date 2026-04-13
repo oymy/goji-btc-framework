@@ -1,70 +1,73 @@
 {
-  "scan_key": "2026-04-12T23:07",
+  "scan_key": "2026-04-13T08:12",
   "source": "coinglass_browser_cdp_dom_ocr",
   "symbol": "BTCUSDT",
   "exchange": "Binance",
   "timeframe": "1H",
-  "price": 70772,
-  "funding_rate_display": "-0.00069",
-  "open_interest": "6.52B",
-  "long_short_24h": "48.85% / 51.15%",
-  "cvd_candles": "32.51K",
-  "aggregated_spot_cvd": "7.772K",
-  "funding_weighted_panel": "0.0027",
-  "oi_candles": "92.179K",
-  "aggregated_futures_bid_ask_delta": "2.499K",
+  "price": 70874,
+  "exchange_funding_rate_display": null,
+  "exchange_open_interest_display": null,
+  "exchange_long_short_24h_display": null,
+  "funding_rate": "0.0026",
+  "open_interest": "90.92K",
+  "long_short_24h": null,
+  "cvd_candles": "35.205K",
+  "aggregated_spot_cvd": "9.723K",
+  "funding_weighted_panel": "0.0026",
+  "oi_candles": "90.92K",
+  "aggregated_futures_bid_ask_delta": "1.155K",
   "conclusion": "观望",
   "paper_trade_action": "NONE",
-  "screenshot_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2307/screenshot.png",
-  "overview_crop_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2307/overview-crop.png",
-  "archive_dir": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-12/2307",
+  "screenshot_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0812/screenshot.png",
+  "overview_crop_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0812/overview-crop.png",
+  "archive_dir": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0812",
   "page_url": "https://www.coinglass.com/tv/Binance_BTCUSDT",
-  "captured_at": "2026-04-12T15:07:58.942Z",
+  "captured_at": "2026-04-13T00:12:29.530Z",
   "extraction_debug": {
     "dom": {
-      "cvd_candles": "32.51K",
-      "aggregated_spot_cvd": "7.772K",
-      "funding_weighted_panel": "0.0027",
-      "oi_candles": "92.179K",
-      "aggregated_futures_bid_ask_delta": "2.499K"
+      "cvd_candles": "35.205K",
+      "aggregated_spot_cvd": "9.723K",
+      "funding_weighted_panel": "0.0026",
+      "oi_candles": "90.92K",
+      "aggregated_futures_bid_ask_delta": "1.155K"
     },
     "ocr": {
-      "funding_rate_display": "-0.00069",
-      "open_interest": "6.52B",
-      "long_short_24h": "48.85% / 51.15%",
-      "cvd_candles": "500.73M",
-      "aggregated_spot_cvd": "689.20M",
-      "funding_weighted_panel": "4733.65",
+      "funding_rate_display": null,
+      "open_interest": null,
+      "long_short_24h": null,
+      "cvd_candles": "40K",
+      "aggregated_spot_cvd": "672.30M",
+      "funding_weighted_panel": "4644.24",
       "oi_candles": "96K",
-      "aggregated_futures_bid_ask_delta": "2.499K"
+      "aggregated_futures_bid_ask_delta": null
     },
     "iframe_studies": {
       "Cumulative Volume Delta (CVD Candles)": [
-        "32.392K",
-        "32.51K",
-        "32.392K",
-        "32.51K"
+        "35.033K",
+        "35.205K",
+        "35.033K",
+        "35.205K"
       ],
       "Aggregated Spot Cumulative Volume Delta (CVD Candles)": [
-        "7.694K",
-        "7.772K",
-        "7.694K",
-        "7.772K"
+        "9.654K",
+        "9.723K",
+        "9.654K",
+        "9.723K"
       ],
       "Funding Rates(Open Interest Weighted)": [
-        "0.0027"
+        "0.0026"
       ],
       "Open Interest (Candles)": [
-        "92.189K",
-        "92.189K",
-        "92.153K",
-        "92.179K"
+        "90.77K",
+        "90.955K",
+        "90.77K",
+        "90.92K"
       ],
       "Aggregated Futures Bid & Ask Delta": [
-        "2.499K"
+        "1.155K"
       ]
     }
   },
-  "status": "ok",
-  "note": "Overview display fields from cropped OCR fallback. Chart panel values from iframe DOM first, OCR fallback."
+  "status": "partial",
+  "note": "Framework fields prefer aggregated sources. funding_rate uses Funding Rates(Open Interest Weighted); open_interest uses panel OI candles. Right-side Binance display fields are stored separately for reference only."
 }

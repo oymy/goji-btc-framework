@@ -330,9 +330,12 @@ async function main() {
 
   const extracted = {
     price: apiPrice ?? overview.price,
-    funding_rate_display: overview.funding_rate_display || ocrExtracted.funding_rate_display,
-    open_interest: overview.open_interest || ocrExtracted.open_interest,
-    long_short_24h: overview.long_short_24h || ocrExtracted.long_short_24h,
+    exchange_funding_rate_display: overview.funding_rate_display || ocrExtracted.funding_rate_display,
+    exchange_open_interest_display: overview.open_interest || ocrExtracted.open_interest,
+    exchange_long_short_24h_display: overview.long_short_24h || ocrExtracted.long_short_24h,
+    funding_rate: domExtracted.funding_weighted_panel || ocrExtracted.funding_weighted_panel,
+    open_interest: domExtracted.oi_candles || ocrExtracted.oi_candles,
+    long_short_24h: null,
     cvd_candles: domExtracted.cvd_candles || ocrExtracted.cvd_candles,
     aggregated_spot_cvd: domExtracted.aggregated_spot_cvd || ocrExtracted.aggregated_spot_cvd,
     funding_weighted_panel: domExtracted.funding_weighted_panel || ocrExtracted.funding_weighted_panel,
@@ -361,7 +364,7 @@ async function main() {
       iframe_studies: iframeStudies,
     },
     status: Object.values(extracted).every(v => v !== null) ? 'ok' : 'partial',
-    note: 'Overview display fields from cropped OCR fallback. Chart panel values from iframe DOM first, OCR fallback.'
+    note: 'Framework fields prefer aggregated sources. funding_rate uses Funding Rates(Open Interest Weighted); open_interest uses panel OI candles. Right-side Binance display fields are stored separately for reference only.'
   };
 
   fs.writeFileSync(path.join(runDir, 'ocr.json'), JSON.stringify(ocr, null, 2));
@@ -372,9 +375,12 @@ async function main() {
   fs.writeFileSync(path.join(runDir, 'scan.md'), [
     `scan_key: ${result.scan_key}`,
     `price: ${result.price}`,
-    `funding_rate_display: ${result.funding_rate_display}`,
+    `funding_rate: ${result.funding_rate}`,
     `open_interest: ${result.open_interest}`,
     `long_short_24h: ${result.long_short_24h}`,
+    `exchange_funding_rate_display: ${result.exchange_funding_rate_display}`,
+    `exchange_open_interest_display: ${result.exchange_open_interest_display}`,
+    `exchange_long_short_24h_display: ${result.exchange_long_short_24h_display}`,
     `cvd_candles: ${result.cvd_candles}`,
     `aggregated_spot_cvd: ${result.aggregated_spot_cvd}`,
     `funding_weighted_panel: ${result.funding_weighted_panel}`,
