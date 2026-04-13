@@ -1,73 +1,72 @@
 {
-  "scan_key": "2026-04-13T08:12",
+  "scan_key": "2026-04-13T08:16",
   "source": "coinglass_browser_cdp_dom_ocr",
   "symbol": "BTCUSDT",
   "exchange": "Binance",
   "timeframe": "1H",
-  "price": 70874,
+  "price": 70897,
   "exchange_funding_rate_display": null,
   "exchange_open_interest_display": null,
   "exchange_long_short_24h_display": null,
-  "funding_rate": "0.0026",
-  "open_interest": "90.92K",
-  "long_short_24h": null,
-  "cvd_candles": "35.205K",
-  "aggregated_spot_cvd": "9.723K",
-  "funding_weighted_panel": "0.0026",
-  "oi_candles": "90.92K",
-  "aggregated_futures_bid_ask_delta": "1.155K",
+  "funding_rate": "0.0027",
+  "open_interest": "90.923K",
+  "cvd_candles": "35.214K",
+  "aggregated_spot_cvd": "9.726K",
+  "aggregated_futures_bid_ask_delta": "717.85378",
+  "funding_weighted_panel": "0.0027",
+  "oi_candles": "90.923K",
   "conclusion": "观望",
   "paper_trade_action": "NONE",
-  "screenshot_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0812/screenshot.png",
-  "overview_crop_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0812/overview-crop.png",
-  "archive_dir": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0812",
+  "screenshot_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0816/screenshot.png",
+  "overview_crop_path": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0816/overview-crop.png",
+  "archive_dir": "/Users/oymyisme/.openclaw/workspace/study/goji-btc-framework/data/runs/2026-04-13/0816",
   "page_url": "https://www.coinglass.com/tv/Binance_BTCUSDT",
-  "captured_at": "2026-04-13T00:12:29.530Z",
+  "captured_at": "2026-04-13T00:16:12.132Z",
   "extraction_debug": {
     "dom": {
-      "cvd_candles": "35.205K",
-      "aggregated_spot_cvd": "9.723K",
-      "funding_weighted_panel": "0.0026",
-      "oi_candles": "90.92K",
-      "aggregated_futures_bid_ask_delta": "1.155K"
+      "cvd_candles": "35.214K",
+      "aggregated_spot_cvd": "9.726K",
+      "funding_weighted_panel": "0.0027",
+      "oi_candles": "90.923K",
+      "aggregated_futures_bid_ask_delta": "717.85378"
     },
     "ocr": {
       "funding_rate_display": null,
       "open_interest": null,
       "long_short_24h": null,
       "cvd_candles": "40K",
-      "aggregated_spot_cvd": "672.30M",
-      "funding_weighted_panel": "4644.24",
+      "aggregated_spot_cvd": "672.48M",
+      "funding_weighted_panel": "4645.69",
       "oi_candles": "96K",
-      "aggregated_futures_bid_ask_delta": null
+      "aggregated_futures_bid_ask_delta": "717.85378"
     },
     "iframe_studies": {
       "Cumulative Volume Delta (CVD Candles)": [
         "35.033K",
-        "35.205K",
+        "35.214K",
         "35.033K",
-        "35.205K"
+        "35.214K"
       ],
       "Aggregated Spot Cumulative Volume Delta (CVD Candles)": [
         "9.654K",
-        "9.723K",
+        "9.726K",
         "9.654K",
-        "9.723K"
+        "9.726K"
       ],
       "Funding Rates(Open Interest Weighted)": [
-        "0.0026"
+        "0.0027"
       ],
       "Open Interest (Candles)": [
         "90.77K",
         "90.955K",
         "90.77K",
-        "90.92K"
+        "90.923K"
       ],
       "Aggregated Futures Bid & Ask Delta": [
-        "1.155K"
+        "717.85378"
       ]
     }
   },
-  "status": "partial",
-  "note": "Framework fields prefer aggregated sources. funding_rate uses Funding Rates(Open Interest Weighted); open_interest uses panel OI candles. Right-side Binance display fields are stored separately for reference only."
+  "status": "ok",
+  "note": "Framework uses five core indicators only: aggregated funding_rate, contract CVD, aggregated spot CVD, aggregated open_interest, and aggregated futures bid/ask delta. Right-side Binance display fields are stored separately for reference only."
 }

@@ -335,13 +335,21 @@ async function main() {
     exchange_long_short_24h_display: overview.long_short_24h || ocrExtracted.long_short_24h,
     funding_rate: domExtracted.funding_weighted_panel || ocrExtracted.funding_weighted_panel,
     open_interest: domExtracted.oi_candles || ocrExtracted.oi_candles,
-    long_short_24h: null,
     cvd_candles: domExtracted.cvd_candles || ocrExtracted.cvd_candles,
     aggregated_spot_cvd: domExtracted.aggregated_spot_cvd || ocrExtracted.aggregated_spot_cvd,
+    aggregated_futures_bid_ask_delta: domExtracted.aggregated_futures_bid_ask_delta || ocrExtracted.aggregated_futures_bid_ask_delta,
     funding_weighted_panel: domExtracted.funding_weighted_panel || ocrExtracted.funding_weighted_panel,
     oi_candles: domExtracted.oi_candles || ocrExtracted.oi_candles,
-    aggregated_futures_bid_ask_delta: domExtracted.aggregated_futures_bid_ask_delta || ocrExtracted.aggregated_futures_bid_ask_delta,
   };
+
+  const requiredCoreFields = [
+    extracted.price,
+    extracted.funding_rate,
+    extracted.cvd_candles,
+    extracted.aggregated_spot_cvd,
+    extracted.open_interest,
+    extracted.aggregated_futures_bid_ask_delta,
+  ];
 
   const scanKey = `${t.date}T${t.hm.slice(0,2)}:${t.hm.slice(2)}`;
   const result = {
@@ -363,8 +371,8 @@ async function main() {
       ocr: ocrExtracted,
       iframe_studies: iframeStudies,
     },
-    status: Object.values(extracted).every(v => v !== null) ? 'ok' : 'partial',
-    note: 'Framework fields prefer aggregated sources. funding_rate uses Funding Rates(Open Interest Weighted); open_interest uses panel OI candles. Right-side Binance display fields are stored separately for reference only.'
+    status: requiredCoreFields.every(v => v !== null) ? 'ok' : 'partial',
+    note: 'Framework uses five core indicators only: aggregated funding_rate, contract CVD, aggregated spot CVD, aggregated open_interest, and aggregated futures bid/ask delta. Right-side Binance display fields are stored separately for reference only.'
   };
 
   fs.writeFileSync(path.join(runDir, 'ocr.json'), JSON.stringify(ocr, null, 2));
@@ -377,7 +385,6 @@ async function main() {
     `price: ${result.price}`,
     `funding_rate: ${result.funding_rate}`,
     `open_interest: ${result.open_interest}`,
-    `long_short_24h: ${result.long_short_24h}`,
     `exchange_funding_rate_display: ${result.exchange_funding_rate_display}`,
     `exchange_open_interest_display: ${result.exchange_open_interest_display}`,
     `exchange_long_short_24h_display: ${result.exchange_long_short_24h_display}`,
